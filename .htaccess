@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # logs/ 디렉토리에 대한 모든 접근 차단
+    RewriteRule ^logs/.*$ - [F,L]
+
+    # src/ 및 scripts/ 디렉토리 내의 PHP 파일 직접 접근 방지
+    RewriteRule ^(src|scripts)/.*\.php$ - [F,L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # 요청된 파일이나 디렉터리가 존재하지 않을 경우,
+    # 현재 디렉터리의 index.php로 요청을 재작성합니다.
+    # 이는 일반적으로 단일 페이지 애플리케이션(SPA) 라우팅에 사용됩니다.
+    RewriteRule . index.php [L]
+</IfModule>

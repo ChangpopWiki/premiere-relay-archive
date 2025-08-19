@@ -1,0 +1,10 @@
+[Unit]
+Description=premiere-relay-archive: 오늘 최초공개 영상의 유튜브 데이터 업데이트
+
+[Service]
+Type=oneshot
+ExecStart=php {{PROJECT_ROOT}}/scripts/update_youtube_data.php
+WorkingDirectory={{PROJECT_ROOT}}
+
+[Install]
+WantedBy=multi-user.target

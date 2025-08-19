@@ -1,0 +1,10 @@
+[Unit]
+Description=premiere-relay-archive: 데이터 GitHub에 하루마다 커밋
+RefuseManualStart=no
+RefuseManualStop=no
+
+[Timer]
+OnCalendar=*-*-* 00:05:00
+
+[Install]
+WantedBy=timers.target

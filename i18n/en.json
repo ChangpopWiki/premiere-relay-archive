@@ -1,0 +1,10 @@
+{
+    "unauthorized": "Unauthorized",
+    "invalid_json": "Invalid JSON payload",
+    "webhook_success": "Webhook data processed successfully.",
+    "processing_error": "An error occurred while processing the data.",
+    "invalid_date": "Invalid date format. Please use YYYY-MM-DD.",
+    "no_data": "No data available for the specified date.",
+    "file_read_error": "Failed to read or parse data file.",
+    "server_config_error": "Server configuration error"
+}

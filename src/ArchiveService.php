@@ -1,0 +1,224 @@
+<?php
+declare(strict_types=1);
+
+namespace PremiereRelayArchive;
+
+use Exception;
+use PremiereRelayArchive\Utils\VideoUtils;
+use League\Csv;
+
+class ArchiveService
+{
+    readonly TsvStorage $storage;
+    readonly YoutubeApiClient $youtubeApiClient;
+    readonly ArchiveDate $date;
+
+    public function __construct(
+        ArchiveDate $date,
+        TsvStorage $storage = null,
+        YoutubeApiClient $youtubeApiClient = null)
+    {
+        $this->date = $date;
+        $this->storage = $storage ?? new TsvStorage($date);
+        $this->youtubeApiClient = $youtubeApiClient ?? YoutubeApiClient::createFromEnvApiKey();
+    }
+
+    /**
+     * 웹훅 페이로드를 처리하여 일일 스케줄을 업데이트하고 저장합니다.
+     *
+     * @param array $payload
+     * @return void
+     * @throws Exception
+     */
+    public function updateFromWebhook(array $payload): void
+    {
+        $newDataRows = $this->prepareInitialDataRows($payload);
+        $existingDataRows = $this->storage->read();
+
+        if ($this->haveVideoIdsChanged($newDataRows, $existingDataRows)) {
+            $finalDataRows = $this->updateYoutubeData($newDataRows);
+        } else {
+            $finalDataRows = $this->mergeExistingYoutubeData($newDataRows, $existingDataRows);
+        }
+
+        // 오늘의 파일이 아직 없고 들어온 데이터가 모두 비어있다면 파일이 생성되지 않도록 건너뜁니다.
+        if ($this->storage->isFileExists() == false && $this->isAllRowsEmpty($finalDataRows)) {
+            return;
+        }
+
+        // 모든 행이 끝난 최초공개라면 업데이트를 건너뜁니다.
+        if ($this->isAllRowsPremiered($finalDataRows)) {
+            return;
+        }
+
+        // 23시 이후에 페이로드가 비어있다면 업데이트를 건너뜁니다. (이른 시트 청소로 인한 데이터 제거 방지)
+        // NOTE: 점진적 제거가 이루어지는 경우 여전히 데이터가 누락될 위험이 있음.
+        if ($this->isAfter23PM() && $this->isAllRowsEmpty($finalDataRows)) {
+            return;
+        }
+
+        // 최종 데이터를 저장합니다.
+        $this->storage->write($finalDataRows);
+    }
+
+    /**
+     * 한국 시간 기준으로 23시부터 24시이면 true, 아니면 false를 반환합니다.
+     */
+    private function isAfter23PM(): bool
+    {
+        $now = new \DateTime('now', new \DateTimeZone('Asia/Seoul'));
+        return $now->format('H') === '23';
+    }
+
+    /**
+     * 웹훅 전체 페이로드를 기반으로 데이터를 보충합니다.
+     *
+     * @param array $payload 웹훅 페이로드
+     * @return void
+     * @throws Csv\CannotInsertRecord
+     */
+    public function backfillByPayload(array $payload): void
+    {
+        $dataRows = $this->prepareInitialDataRows($payload);
+        $dataRows = $this->updateYoutubeData($dataRows);
+        $this->storage->write($dataRows);
+    }
+
+    /**
+     * 모든 행의 최초공개가 끝났는지 확인합니다.
+     *
+     * @param DataRow[] $dataRows 기존 데이터 행 (스킵 여부 판단용)
+     * @return bool 모든 행이 최초공개가 끝났다면 true, 하나라도 끝나지 않았다면 false
+     */
+    public function isAllRowsPremiered(array $dataRows): bool
+    {
+        foreach ($dataRows as $row) {
+
+            // 비어있는 행은 최초공개 여부를 판단할 수 없습니다.
+            if ($row->isEmpty()) {
+                continue;
+            }
+
+            // 하나라도 최초공개 전인 행이 있다면 false
+            if ($row->isPremiered() == false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 웹훅 페이로드에서 받은 데이터를 처리하여 초기 데이터를 준비합니다.
+     * 이 메서드는 YouTube 정보 병합을 수행하지 않습니다.
+     *
+     * @param array $payload 웹훅 페이로드
+     * @return DataRow[] 처리된 데이터 배열
+     */
+    private function prepareInitialDataRows(array $payload): array
+    {
+        $dataRows = [];
+
+        // 23:00부터 23:55까지 5분 단위로 time_slot 열을 채웁니다.
+        for ($i = 0; $i < 12; $i++) {
+            $time_slot = sprintf("23:%02d", $i * 5);
+            $dataRows []= new DataRow(time_slot: $time_slot);
+        }
+
+        // 페이로드에서 values 배열을 가져와 각 행의 시트 기반 열 데이터를 채웁니다.
+        $payloadValues = $payload['values'] ?? [];
+        foreach ($payloadValues as $index => $row) {
+            if (isset($dataRows[$index])) {
+                $dataRows[$index]->column_a = $row[0];
+                $dataRows[$index]->column_b = $row[1];
+                $dataRows[$index]->column_c = $row[2];
+                $dataRows[$index]->video_id = VideoUtils::extractVideoId($row[1]);
+            }
+        }
+
+        return $dataRows;
+    }
+
+    /**
+     * 두 데이터셋의 비디오 ID 목록이 완전히 동일한지 확인합니다.
+     * 하나라도 다르거나 순서가 맞지 않으면 false를 반환합니다.
+     *
+     * @param DataRow[] $newData 새로운 데이터
+     * @param DataRow[] $existingData 기존 데이터
+     * @return bool 비디오 ID 목록이 동일하면 true, 그렇지 않으면 false
+     */
+    private function haveVideoIdsChanged(array $newData, array $existingData): bool
+    {
+        $newVideoIds = array_map(fn(DataRow $row) => $row->video_id, $newData);
+        $existingVideoIds = array_map(fn(DataRow $row) => $row->video_id, $existingData);
+        return $newVideoIds !== $existingVideoIds;
+    }
+
+    /**
+     * @param DataRow[] $targetData
+     * @param DataRow[] $existingData 유튜브 데이터가 포함된 기존 데이터
+     * @return DataRow[] existingData의 유튜브 데이터가 추가된 데이터
+     */
+    private function mergeExistingYoutubeData(array $targetData, array $existingData): array
+    {
+        foreach ($targetData as $index => $row) {
+            if (isset($existingData[$index])) {
+                $row->mergeYoutubeData($existingData[$index]);
+            }
+        }
+        return $targetData;
+    }
+
+    /**
+     * 데이터 배열에 의미 있는 값(time_slot을 제외한)이 있는지 확인합니다.
+     * 일반적으로 데이터는 비어있지 않으므로(false), 비어있는 경우(true)가 특수한 상황입니다.
+     *
+     * @param DataRow[] $rows 확인할 데이터 배열
+     * @return bool 모두 비어 있으면 true, 하나라도 값이 있으면 false
+     */
+    private function isAllRowsEmpty(array $rows): bool
+    {
+        foreach ($rows as $row) {
+
+            // 하나라도 비어있지 않은 행이 있다면 false입니다.
+            if ($row->isEmpty() == false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    
+
+    /**
+     * 데이터에 YouTube 상세 정보를 병합합니다.
+     * 이 함수는 날짜 일치 여부를 확인하지 않습니다.
+     *
+     * @param DataRow[] $dataRows 병합할 데이터
+     * @return DataRow[] 병합된 데이터
+     */
+    public function updateYoutubeData(array $dataRows): array
+    {
+        $videoIdsToFetch = [];
+        foreach ($dataRows as $row) {
+            if (!empty($row->video_id)) {
+                $videoIdsToFetch[] = $row->video_id;
+            }
+        }
+
+        if (empty($videoIdsToFetch)) {
+            return $dataRows;
+        }
+
+        $youtubeData = $this->youtubeApiClient->fetchVideos($videoIdsToFetch);
+
+        foreach ($dataRows as $row) {
+            $videoId = $row->video_id;
+            if (!empty($videoId) && isset($youtubeData[$videoId])) {
+                $row->mergeYoutubeData($youtubeData[$videoId]);
+            }
+        }
+        return $dataRows;
+    }
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=premiere-relay-archive: 오늘 최초공개 영상의 유튜브 데이터 업데이트
+RefuseManualStart=no
+RefuseManualStop=no
+
+[Timer]
+# 00:00부터 22:00까지 매시 정각에 실행
+OnCalendar=*-*-* 00..22:00
+# 23:00부터 23:55까지 5분 간격으로 실행
+OnCalendar=*-*-* 23:00/5
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# 스크립트 실행 중 오류 발생 시 즉시 종료
+set -e
+
+# 프로젝트 루트 디렉토리로 이동
+cd "$(dirname "$0")"
+
+echo "[설치 시작] premiere-relay-archive 설치를 시작합니다."
+
+# 1. composer install 실행
+echo "[단계 1/5] Composer 의존성 설치 중..."
+composer install --no-dev --optimize-autoloader
+
+# 2. Apache mod_rewrite 모듈 확인 및 활성화 권장
+echo "[단계 2/5] Apache mod_rewrite 모듈 확인 중..."
+if ! apache2ctl -M | grep -q rewrite_module; then
+    echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있지 않습니다."
+    echo "  -> URL 재작성(URL Rewriting)이 필요하므로, 다음 명령을 실행하여 활성화해주세요:"
+    echo "     sudo a2enmod rewrite"
+    echo "     sudo systemctl restart apache2"
+    echo "  -> 이 스크립트를 계속 진행하려면 'mod_rewrite'를 활성화한 후 다시 실행해주세요."
+    exit 1
+else
+    echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있습니다."
+fi
+
+# 3. config.php 파일 생성
+echo "[단계 3/5] config.php 파일 생성 중..."
+if [ ! -f config.php ]; then
+    cp config.template.php config.php
+    echo "  -> config.template.php를 복사하여 config.php를 생성했습니다."
+else
+    echo "  -> config.php 파일이 이미 존재합니다. 건너뜁니다."
+fi
+
+# 4. 디렉토리 권한 설정
+echo "[단계 4/5] 데이터 및 로그 디렉토리 권한 설정 중..."
+# 웹 서버 사용자 감지 (Debian/Ubuntu/CentOS/RHEL 호환)
+APACHE_USER=$(ps -ef | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -n1 | awk '{print $1}')
+
+if [ -z "${APACHE_USER}" ]; then
+    echo "  -> 웹 서버 사용자를 자동으로 감지하지 못했습니다. 'www-data'를 기본값으로 사용합니다."
+    APACHE_USER='www-data'
+fi
+
+echo "  -> 웹 서버 사용자를 '${APACHE_USER}' (으)로 감지했습니다."
+
+# data 및 logs 디렉토리 권한 설정
+if [ -d "data" ] && [ -d "logs" ]; then
+    echo "  -> 'data' 및 'logs' 디렉토리의 그룹을 '${APACHE_USER}' (으)로 변경합니다."
+    sudo chgrp -R "${APACHE_USER}" data logs
+
+    echo "  -> 'data' 및 'logs' 디렉토리에 그룹 쓰기 권한을 추가하고 setgid 비트를 설정합니다 (g+ws)."
+    sudo chmod -R g+ws data logs
+    echo "  -> 디렉토리 권한 설정이 완료되었습니다."
+else
+    echo "  -> 'data' 또는 'logs' 디렉토리가 존재하지 않아 권한 설정을 건너뜁니다."
+fi
+
+# 5. Systemd 유닛 파일 설정
+echo "[단계 5/5] Systemd 유닛 파일 설정 중..."
+SYSTEMD_DIR="$(pwd)/scheduling"
+
+# .service 파일 처리
+PROJECT_ROOT="$(pwd)"
+
+for service_file in "${SYSTEMD_DIR}"/*.service; do
+    if [ -f "$service_file" ]; then
+        SERVICE_BASENAME=$(basename "$service_file")
+        RESOLVED_SERVICE_FILE="${service_file}.resolved"
+        
+        # 플레이스홀더를 실제 경로로 대체하여 .resolved 파일 생성
+        echo "  -> ${service_file} 파일을 ${RESOLVED_SERVICE_FILE} (으)로 치환 및 복사합니다."
+        sed "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" "$service_file" > "${RESOLVED_SERVICE_FILE}"
+
+        echo "  -> ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 및 활성화..."
+        sudo ln -sf "${RESOLVED_SERVICE_FILE}" /etc/systemd/system/ || { echo "  -> [오류] ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 실패"; exit 1; }
+        sudo systemctl enable "${SERVICE_BASENAME}" || { echo "  -> [오류] ${SERVICE_BASENAME} 서비스 활성화 실패"; exit 1; }
+    fi
+done
+
+# .timer 파일 심볼릭 링크 및 활성화
+for timer_file in "${SYSTEMD_DIR}"/*.timer; do
+    if [ -f "$timer_file" ]; then
+        echo "  -> ${timer_file} 심볼릭 링크 생성 및 활성화..."
+        sudo ln -sf "$timer_file" /etc/systemd/system/ || { echo "  -> [오류] ${timer_file} 심볼릭 링크 생성 실패"; exit 1; }
+        sudo systemctl enable --now "$(basename "$timer_file")" || { echo "  -> [오류] $(basename "$timer_file") 타이머 활성화 실패"; exit 1; }
+    fi
+done
+
+sudo systemctl daemon-reload || { echo "  -> [오류] Systemd 데몬 리로드 실패"; exit 1; }
+
+echo "[설치 완료] 시스템 설치가 성공적으로 완료되었습니다."
+echo "이제 config.php 파일을 열어 API 키를 설정하고, 웹 서버 설정을 확인해주세요."

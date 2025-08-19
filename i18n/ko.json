@@ -1,0 +1,10 @@
+{
+    "unauthorized": "인증되지 않았습니다.",
+    "invalid_json": "잘못된 JSON 페이로드입니다.",
+    "webhook_success": "웹훅 데이터가 성공적으로 처리되었습니다.",
+    "processing_error": "데이터 처리 중 오류가 발생했습니다.",
+    "invalid_date": "잘못된 날짜 형식입니다. YYYY-MM-DD 형식을 사용해주세요.",
+    "no_data": "지정된 날짜에 대한 데이터가 없습니다.",
+    "file_read_error": "데이터 파일을 읽거나 파싱하는 데 실패했습니다.",
+    "server_config_error": "서버 설정 오류"
+}
