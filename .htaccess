@@ -1,6 +1,9 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Authorization 헤더를 PHP 스크립트에 전달하도록 허
+    CGIPassAuth On
+
     # logs/ 디렉토리에 대한 모든 접근 차단
     RewriteRule ^logs/.*$ - [F,L]
 
