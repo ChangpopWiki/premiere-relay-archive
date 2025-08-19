@@ -113,7 +113,7 @@ for service_file in "${SYSTEMD_DIR}"/*.service; do
         sed "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" "$service_file" > "${RESOLVED_SERVICE_FILE}"
 
         echo "  -> ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 및 활성화..."
-        sudo ln -sf "${RESOLVED_SERVICE_FILE}" /etc/systemd/system/ || { echo "  -> [오류] ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 실패"; exit 1; }
+        sudo ln -sf "${RESOLVED_SERVICE_FILE}" "/etc/systemd/system/${SERVICE_BASENAME}" || { echo "  -> [오류] ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 실패"; exit 1; }
         sudo systemctl enable "${SERVICE_BASENAME}" || { echo "  -> [오류] ${SERVICE_BASENAME} 서비스 활성화 실패"; exit 1; }
     fi
 done
