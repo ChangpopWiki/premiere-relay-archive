@@ -13,19 +13,54 @@ echo "[단계 1/5] Composer 의존성 설치 중..."
 composer install --no-dev --optimize-autoloader
 
 # 2. Apache mod_rewrite 모듈 확인 및 활성화 권장
+check_rewrite_module() {
+    # a2query (최신 Debian/Ubuntu)
+    if command -v a2query &>/dev/null; then
+        a2query -m rewrite &>/dev/null
+        return $? # 0 if enabled, 1 if disabled
+    fi
+
+    # apache2ctl (Debian/Ubuntu)
+    if command -v apache2ctl &>/dev/null; then
+        if apache2ctl -M 2>&1 | grep -q 'rewrite_module'; then
+            return 0 # enabled
+        else
+            return 1 # disabled
+        fi
+    fi
+    
+    # httpd (CentOS/RHEL)
+    if command -v httpd &>/dev/null; then
+        if httpd -M 2>&1 | grep -q 'rewrite_module'; then
+            return 0 # enabled
+        else
+            return 1 # disabled
+        fi
+    fi
+
+    # No command found
+    return 2
+}
+
 echo "[단계 2/5] Apache mod_rewrite 모듈 확인 중..."
-# a2query (최신 Debian/Ubuntu) 또는 apache2ctl -M (구버전/다른 시스템)을 사용하여 mod_rewrite 활성화 여부 확인
-if (command -v a2query &>/dev/null && a2query -m rewrite &>/dev/null) || \
-   (command -v apache2ctl &>/dev/null && apache2ctl -M 2>&1 | grep -q 'rewrite_module'); then
-    echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있습니다."
-else
-    echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있지 않습니다."
-    echo "  -> URL 재작성(URL Rewriting)이 필요하므로, 다음 명령을 실행하여 활성화해주세요:"
-    echo "     sudo a2enmod rewrite"
-    echo "     sudo systemctl restart apache2"
-    echo "  -> 이 스크립트를 계속 진행하려면 'mod_rewrite'를 활성화한 후 다시 실행해주세요."
-    exit 1
-fi
+check_rewrite_module
+case $? in
+    0)
+        echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있습니다."
+        ;;
+    1)
+        echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있지 않습니다."
+        echo "  -> URL 재작성(URL Rewriting)이 필요하므로, 다음 명령을 실행하여 활성화해주세요:"
+        echo "     sudo a2enmod rewrite"
+        echo "     sudo systemctl restart apache2"
+        echo "  -> 이 스크립트를 계속 진행하려면 'mod_rewrite'를 활성화한 후 다시 실행해주세요."
+        exit 1
+        ;;
+    2)
+        echo "  -> [경고] Apache 제어 명령어를 찾을 수 없어 mod_rewrite 모듈 확인을 건너뜁니다."
+        echo "  -> 'mod_rewrite'가 활성화되어 있는지 수동으로 확인해주세요."
+        ;;
+esac
 
 
 # 3. config.php 파일 생성
