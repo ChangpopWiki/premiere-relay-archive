@@ -94,11 +94,13 @@ function handlePostRequest(): void
     $env = loadEnvironmentConfig();
     $headers = getallheaders();
     if (!isset($headers['Authorization'])) {
+        $logger->error('인증 헤더가 누락되었습니다.');
         sendErrorResponse(MessageKeys::UNAUTHORIZED, 401);
     }
     $token = str_replace('Bearer ', '', $headers['Authorization']);
 
     if ($token !== $env->secretKey) {
+        $logger->error('인증 토큰이 일치하지 않습니다.');
         sendErrorResponse(MessageKeys::UNAUTHORIZED, 401);
     }
 
