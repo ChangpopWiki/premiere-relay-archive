@@ -14,16 +14,19 @@ composer install --no-dev --optimize-autoloader
 
 # 2. Apache mod_rewrite 모듈 확인 및 활성화 권장
 echo "[단계 2/5] Apache mod_rewrite 모듈 확인 중..."
-if ! apache2ctl -M | grep -q rewrite_module; then
+# a2query (최신 Debian/Ubuntu) 또는 apache2ctl -M (구버전/다른 시스템)을 사용하여 mod_rewrite 활성화 여부 확인
+if (command -v a2query &>/dev/null && a2query -m rewrite &>/dev/null) || \
+   (command -v apache2ctl &>/dev/null && apache2ctl -M 2>&1 | grep -q 'rewrite_module'); then
+    echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있습니다."
+else
     echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있지 않습니다."
     echo "  -> URL 재작성(URL Rewriting)이 필요하므로, 다음 명령을 실행하여 활성화해주세요:"
     echo "     sudo a2enmod rewrite"
     echo "     sudo systemctl restart apache2"
     echo "  -> 이 스크립트를 계속 진행하려면 'mod_rewrite'를 활성화한 후 다시 실행해주세요."
     exit 1
-else
-    echo "  -> Apache 'mod_rewrite' 모듈이 활성화되어 있습니다."
 fi
+
 
 # 3. config.php 파일 생성
 echo "[단계 3/5] config.php 파일 생성 중..."
