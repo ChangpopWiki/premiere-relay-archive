@@ -75,19 +75,20 @@ fi
 # 4. 디렉토리 권한 설정
 echo "[단계 4/5] 데이터 및 로그 디렉토리 권한 설정 중..."
 
-# 웹 서버 사용자 감지
+# 웹 서버 사용자 감지 (그룹 권한용)
 APACHE_USER=$(ps -ef | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -n1 | awk '{print $1}')
-
 if [ -z "${APACHE_USER}" ]; then
     echo "  -> 웹 서버 사용자를 자동으로 감지하지 못했습니다. 'www-data'를 기본값으로 사용합니다."
     APACHE_USER='www-data'
 fi
-
 APACHE_GROUP=$(id -gn "${APACHE_USER}")
+echo "  -> 웹 서버 그룹 (권한용): '${APACHE_GROUP}'"
 
-echo "  -> 웹 서버 사용자: '${APACHE_USER}', 그룹: '${APACHE_GROUP}'"
+# 프로젝트 디렉토리 소유자 감지 (서비스 실행용)
+SERVICE_USER=$(stat -c '%U' .)
+echo "  -> 프로젝트 소유자 (서비스 실행용): '${SERVICE_USER}'"
 
-# data, logs 디렉토리 권한 설정
+# data 및 logs 디렉토리 권한 설정 (웹 서버 그룹 사용)
 if [ -d "data" ] && [ -d "logs" ]; then
     echo "  -> 'data' 및 'logs' 디렉토리의 그룹을 '${APACHE_GROUP}' (으)로 변경합니다."
     sudo chgrp -R "${APACHE_GROUP}" data logs
@@ -116,9 +117,9 @@ for service_file in "${SYSTEMD_DIR}"/*.service; do
         SERVICE_BASENAME=$(basename "$service_file")
         RESOLVED_SERVICE_FILE="${service_file}.resolved"
         
-        # 플레이스홀더를 실제 경로로 대체하여 .resolved 파일 생성
+        # 플레이스홀더를 실제 경로와 '서비스 실행 사용자'로 대체하여 .resolved 파일 생성
         echo "  -> ${service_file} 파일을 ${RESOLVED_SERVICE_FILE} (으)로 치환 및 복사합니다."
-        sed -e "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" -e "s|{{APACHE_USER}}|${APACHE_USER}|g" "$service_file" > "${RESOLVED_SERVICE_FILE}"
+        sed -e "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" -e "s|{{SERVICE_USER}}|${SERVICE_USER}|g" "$service_file" > "${RESOLVED_SERVICE_FILE}"
 
         echo "  -> ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 및 활성화..."
         sudo ln -sf "${RESOLVED_SERVICE_FILE}" "/etc/systemd/system/${SERVICE_BASENAME}" || { echo "  -> [오류] ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 실패"; exit 1; }
