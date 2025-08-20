@@ -140,7 +140,12 @@ sudo systemctl daemon-reload || { echo "  -> [오류] Systemd 데몬 리로드 �
 # 6. Git safe.directory 설정
 echo "[단계 6/6] Git safe.directory 설정 중..."
 PROJECT_ROOT="$(pwd)"
-git config --global --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경고] Git safe.directory 설정 실패"; }
+
+# 일반적인 설치 사용자용 글로벌 설정
+git config --global --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경고] Git safe.directory (글로벌) 설정 실패"; }
+
+# 시스템 전체 설정 (모든 사용자에 대해 적용)
+sudo git config --system --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경고] Git safe.directory (시스템) 설정 실패"; }
 
 echo "[설치 완료] 시스템 설치가 성공적으로 완료되었습니다."
 echo "이제 config.php 파일을 열어 API 키를 설정하고, 웹 서버 설정을 확인해주세요."
