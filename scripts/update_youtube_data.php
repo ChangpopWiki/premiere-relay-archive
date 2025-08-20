@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace PremiereRelayArchive;
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 use Monolog\Handler\StreamHandler;
 
 // 로거 인스턴스 생성
