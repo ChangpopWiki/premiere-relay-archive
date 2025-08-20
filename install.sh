@@ -139,7 +139,7 @@ sudo systemctl daemon-reload || { echo "  -> [오류] Systemd 데몬 리로드 �
 
 # 6. Git safe.directory 설정
 echo "[단계 6/6] Git safe.directory 설정 중..."
-PROJECT_ROOT="$(pwd)"
+PROJECT_ROOT="$(realpath "$(pwd)")"
 
 # 일반적인 설치 사용자용 글로벌 설정
 git config --global --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경고] Git safe.directory (글로벌) 설정 실패"; }
