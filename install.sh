@@ -148,8 +148,5 @@ git config --global --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경�
 # 시스템 전체 설정 (모든 사용자에 대해 적용)
 sudo git config --system --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경고] Git safe.directory (시스템) 설정 실패"; }
 
-sudo chgrp ${APACHE_GROUP} "${PROJECT_ROOT}/.git" || { echo "  -> [오류] 프로젝트 디렉토리 그룹 변경 실패"; exit 1; }
-sudo chmod -R g+ws data .git || { echo "  -> [오류] 프로젝트 디렉토리 권한 설정 실패"; exit 1; }
-
 echo "[설치 완료] 시스템 설치가 성공적으로 완료되었습니다."
 echo "이제 config.php 파일을 열어 API 키를 설정하고, 웹 서버 설정을 확인해주세요."
