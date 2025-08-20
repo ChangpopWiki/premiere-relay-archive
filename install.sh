@@ -87,7 +87,7 @@ APACHE_GROUP=$(id -gn "${APACHE_USER}")
 
 echo "  -> 웹 서버 사용자: '${APACHE_USER}', 그룹: '${APACHE_GROUP}'"
 
-# data 및 logs 디렉토리 권한 설정
+# data, logs 디렉토리 권한 설정
 if [ -d "data" ] && [ -d "logs" ]; then
     echo "  -> 'data' 및 'logs' 디렉토리의 그룹을 '${APACHE_GROUP}' (으)로 변경합니다."
     sudo chgrp -R "${APACHE_GROUP}" data logs
@@ -148,6 +148,7 @@ git config --global --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경�
 sudo git config --system --add safe.directory "${PROJECT_ROOT}" || { echo "  -> [경고] Git safe.directory (시스템) 설정 실패"; }
 
 sudo chgrp ${APACHE_GROUP} "${PROJECT_ROOT}/.git" || { echo "  -> [오류] 프로젝트 디렉토리 그룹 변경 실패"; exit 1; }
+sudo chmod -R g+ws data .git || { echo "  -> [오류] 프로젝트 디렉토리 권한 설정 실패"; exit 1; }
 
 echo "[설치 완료] 시스템 설치가 성공적으로 완료되었습니다."
 echo "이제 config.php 파일을 열어 API 키를 설정하고, 웹 서버 설정을 확인해주세요."
