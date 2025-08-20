@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use CzProject\GitPhp\Git;
+use CzProject\GitPhp\GitException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
@@ -47,8 +48,21 @@ try {
 
     $logger->info("커밋 및 푸시 완료: {$commitMessage}");
 
+} catch (GitException $e) {
+    // Git 명령 실행 결과 전체를 가져옵니다.
+    $runnerResult = $e->getRunnerResult();
+
+    $logger->error("커밋 또는 푸시 중 Git 오류 발생: " . $e->getMessage() . PHP_EOL
+        . "--- Git 실행 결과 ---" . PHP_EOL
+        . "Exit Code: " . $runnerResult->getExitCode() . PHP_EOL
+        . "STDOUT: " . $runnerResult->getOutputAsString() . PHP_EOL
+        . "STDERR: " . $runnerResult->getErrorOutputAsString() . PHP_EOL // << 여기에 진짜 오류가 찍힙니다.
+        . "----------------------" . PHP_EOL
+        . "스택 트레이스: " . $e->getTraceAsString() . PHP_EOL
+    );
+    exit(1);
 } catch (\Exception $e) {
-    $logger->error("커밋 또는 푸시 중 오류 발생: " . $e->getMessage() . PHP_EOL
+    $logger->error("알 수 없는 오류 발생: " . $e->getMessage() . PHP_EOL
         . "스택 트레이스: " . $e->getTraceAsString() . PHP_EOL
     );
     exit(1);
