@@ -16,7 +16,10 @@ $logger->pushHandler(new StreamHandler('php://stdout'));
 
 // 날짜 인자 받기 (기본값: 오늘)
 try {
-    $dateArgument = $argv[1];
+    $dateArgument = null;
+    if (isset($argv[1])) {
+        $dateArgument = $argv[1];
+    }
 
     $date = $dateArgument
         ? ArchiveDate::fromString($dateArgument)
