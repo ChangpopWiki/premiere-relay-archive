@@ -5,14 +5,6 @@ namespace PremiereRelayArchive;
 
 use Monolog\Handler\StreamHandler;
 
-// Environment 인스턴스 미리 가져오기 (설정 파일 로딩 및 유효성 검사)
-try {
-    $env = Environment::getInstance();
-} catch (\RuntimeException $e) {
-    echo "오류: {$e->getMessage()}" . PHP_EOL;
-    exit(1);
-}
-
 // 로거 인스턴스 생성
 $logger = new \Monolog\Logger('update_youtube_data');
 // 파일에 로그 기록
@@ -39,16 +31,18 @@ try {
     $archiveService = new ArchiveService($date);
     $storage = $archiveService->storage;
     $dataRows = $storage->read();
+
+    // 날짜가 지정되지 않은 업데이트라면 오늘자에 대한 자동 호출로 간주, 모든 행이 끝난 최초공개라면 업데이트하지 않습니다. (API 호출 아끼기)
+    if ($dateArgument == null && $archiveService->isAllRowsPremiered($dataRows)) {
+        $logger->notice("모든 행이 끝난 최초공개입니다. 업데이트하지 않습니다.");
+        exit(0);
+    }
+
     $dataRows = $archiveService->updateYoutubeData($dataRows);
 
     // 데이터가 비어있으면 업데이트할 것이 없습니다.
     if (empty($dataRows)){
         $logger->info("업데이트할 데이터가 없습니다.");
-        exit(0);
-    }
-    // 날짜가 지정되지 않은 업데이트라면 오늘자에 대한 자동 호출로 간주, 모든 행이 끝난 최초공개라면 업데이트하지 않습니다. (API 호출 아끼기)
-    else if ($dateArgument == null && $archiveService->isAllRowsPremiered($dataRows)) {
-        $logger->notice("모든 행이 끝난 최초공개입니다. 업데이트하지 않습니다.");
         exit(0);
     }
     else {
