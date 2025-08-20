@@ -118,7 +118,7 @@ for service_file in "${SYSTEMD_DIR}"/*.service; do
         
         # 플레이스홀더를 실제 경로로 대체하여 .resolved 파일 생성
         echo "  -> ${service_file} 파일을 ${RESOLVED_SERVICE_FILE} (으)로 치환 및 복사합니다."
-        sed "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" "$service_file" > "${RESOLVED_SERVICE_FILE}"
+        sed -e "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" -e "s|{{APACHE_USER}}|${APACHE_USER}|g" "$service_file" > "${RESOLVED_SERVICE_FILE}"
 
         echo "  -> ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 및 활성화..."
         sudo ln -sf "${RESOLVED_SERVICE_FILE}" "/etc/systemd/system/${SERVICE_BASENAME}" || { echo "  -> [오류] ${RESOLVED_SERVICE_FILE} 심볼릭 링크 생성 실패"; exit 1; }

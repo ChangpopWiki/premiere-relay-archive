@@ -3,6 +3,7 @@ Description=premiere-relay-archive: 데이터 GitHub에 커밋
 
 [Service]
 Type=oneshot
+User={{APACHE_USER}}
 ExecStart=php {{PROJECT_ROOT}}/scripts/commit_data.php
 WorkingDirectory={{PROJECT_ROOT}}
 
