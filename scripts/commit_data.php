@@ -20,6 +20,12 @@ try {
         exit(0);
     }
 
+    // 커밋에 적용할 사용자 정보 설정
+    putenv('GIT_AUTHOR_NAME=backup-bot[bot]');
+    putenv('GIT_AUTHOR_EMAIL=backup-bot[bot]@users.noreply.github.com');
+    putenv('GIT_COMMITTER_NAME=backup-bot[bot]');
+    putenv('GIT_COMMITTER_EMAIL=backup-bot[bot]@users.noreply.github.com');
+
     // 커밋 메시지 생성
     $commitDate = date('Y-m-d H:i:s');
     $commitMessage = "자동 data 아카이브: {$commitDate} ";
