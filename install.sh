@@ -100,7 +100,7 @@ if [ -d "data" ] && [ -d "logs" ]; then
     # 기존 ACL 제거 및 기본 ACL 설정
     sudo setfacl --recursive --remove-all data logs # 기존 ACL 모두 제거
     sudo setfacl --recursive --modify u:${SERVICE_USER}:rwx,u:${APACHE_USER}:rwx,o::--- data logs # 사용자 권한 설정
-    sudo setfacl --recursive --modify --default  u:${SERVICE_USER}:rwx,u:${APACHE_USER}:rwx,o::--- data logs # 기본 ACL 설정 (새로 생성되는 파일/디렉토리에 적용)
+    sudo setfacl --recursive --default --modify u:${SERVICE_USER}:rwx,u:${APACHE_USER}:rwx,o::--- data logs # 기본 ACL 설정 (새로 생성되는 파일/디렉토리에 적용)
 
     echo "  -> 디렉토리 권한 설정이 완료되었습니다."
 else
