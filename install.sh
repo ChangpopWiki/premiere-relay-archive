@@ -75,30 +75,32 @@ fi
 # 4. 디렉토리 권한 설정
 echo "[단계 4/5] 데이터 및 로그 디렉토리 권한 설정 중..."
 
-# 웹 서버 사용자 감지 (그룹 권한용)
+# 웹 서버 사용자 감지 (ACL 권한용)
 APACHE_USER=$(ps -ef | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -n1 | awk '{print $1}')
 if [ -z "${APACHE_USER}" ]; then
     echo "  -> 웹 서버 사용자를 자동으로 감지하지 못했습니다. 'www-data'를 기본값으로 사용합니다."
     APACHE_USER='www-data'
 fi
-APACHE_GROUP=$(id -gn "${APACHE_USER}")
-echo "  -> 웹 서버 그룹 (권한용): '${APACHE_GROUP}'"
+echo "  -> 웹 서버 사용자 (권한용): '${APACHE_USER}'"
 
-# 프로젝트 디렉토리 소유자 감지 (서비스 실행용)
+# 프로젝트 디렉토리 소유자 감지 (서비스 실행용 & ACL 권한용)
 SERVICE_USER=$(stat -c '%U' .)
 echo "  -> 프로젝트 소유자 (서비스 실행용): '${SERVICE_USER}'"
 
-# data 및 logs 디렉토리 권한 설정 (웹 서버 그룹 사용)
+# ACL 지원 여부 확인
+if ! command -v setfacl &> /dev/null; then
+    echo "  -> [오류] 'setfacl' 명령어를 찾을 수 없습니다. ACL이 시스템에서 활성화되어 있는지 확인해주세요."
+    exit 1
+fi
+
+# data 및 logs 디렉토리 권한 설정 (ACL 사용)
 if [ -d "data" ] && [ -d "logs" ]; then
-    echo "  -> 'data' 및 'logs' 디렉토리의 그룹을 '${APACHE_GROUP}' (으)로 변경합니다."
-    sudo chgrp -R "${APACHE_GROUP}" data logs
-
-    echo "  -> 'data' 및 'logs' 디렉토리에 그룹 쓰기 권한과 setgid 비트를 설정합니다."
-    sudo chmod -R g+ws data logs
-
-    echo "  -> 'data' 및 'logs'에 ACL을 설정하여 그룹 쓰기 권한을 항상 보장합니다."
-    sudo setfacl -R -m g:${APACHE_GROUP}:rwx data logs
-    sudo setfacl -R -d -m g:${APACHE_GROUP}:rwx data logs
+    echo "  -> 'data' 및 'logs' 디렉토리에 ACL을 설정하여 Apache 사용자와 서비스 사용자 모두 쓰기 권한을 부여합니다."
+    
+    # 기존 ACL 제거 및 기본 ACL 설정
+    sudo setfacl --recursive --remove-all data logs # 기존 ACL 모두 제거
+    sudo setfacl --recursive --modify u:${SERVICE_USER}:rwx,u:${APACHE_USER}:rwx,o::--- data logs # 사용자 권한 설정
+    sudo setfacl --recursive --modify --default  u:${SERVICE_USER}:rwx,u:${APACHE_USER}:rwx,o::--- data logs # 기본 ACL 설정 (새로 생성되는 파일/디렉토리에 적용)
 
     echo "  -> 디렉토리 권한 설정이 완료되었습니다."
 else
