@@ -118,7 +118,7 @@ function handlePostRequest(): void
     try {
 
         $archiveService = new ArchiveService(ArchiveDate::today());
-        $archiveService->updateFromWebhook($payload);
+        $archiveService->updateFromWebhook($payload, $logger);
 
         sendJsonResponse([
             'status' => 'success',

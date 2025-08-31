@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace PremiereRelayArchive;
 
 use Exception;
+use Monolog\Logger;
 use PremiereRelayArchive\Utils\VideoUtils;
 use League\Csv;
 
@@ -30,35 +31,35 @@ class ArchiveService
      * @return void
      * @throws Exception
      */
-    public function updateFromWebhook(array $payload): void
+    public function updateFromWebhook(array $payload, Logger $logger): void
     {
         $newDataRows = $this->processSheetData($payload);
         $existingDataRows = $this->storage->read();
 
         if ($this->haveVideoIdsChanged($newDataRows, $existingDataRows)) {
+            $logger->info('비디오 ID 목록이 변경되어 YouTube 데이터를 새로고침합니다.');
             $finalDataRows = $this->updateYoutubeData($newDataRows);
         } else {
+            $logger->info('비디오 ID 목록이 변경되지 않아 기존 YouTube 데이터를 유지합니다.');
             $finalDataRows = $this->mergeExistingYoutubeData($newDataRows, $existingDataRows);
         }
 
-        // 오늘의 파일이 아직 없고 들어온 데이터가 모두 비어있다면 파일이 생성되지 않도록 건너뜁니다.
-        if ($this->storage->isFileExists() == false && $this->isAllRowsEmpty($finalDataRows)) {
-            return;
-        }
-
-        // 모든 행이 끝난 최초공개라면 업데이트를 건너뜁니다.
+        // 모든 행이 끝난 최초공개라면 업데이트를 건너뜁니다. (전날 데이터가 다음날까지 남았을 때 불필요한 추가를 방지)
         if ($this->isAllRowsPremiered($finalDataRows)) {
+            $logger->notice('모든 행이 끝난 최초공개입니다 - 파일을 쓰지 않습니다.');
             return;
         }
 
         // 23시 이후에 페이로드가 비어있다면 업데이트를 건너뜁니다. (이른 시트 청소로 인한 데이터 제거 방지)
         // NOTE: 점진적 제거가 이루어지는 경우 여전히 데이터가 누락될 위험이 있음.
         if ($this->isAfter23PM() && $this->isAllRowsEmpty($finalDataRows)) {
+            $logger->notice('23시 이후에 모든 행이 빈 페이로드를 받음 - 파일을 쓰지 않습니다.');
             return;
         }
 
         // 최종 데이터를 저장합니다.
         $this->storage->write($finalDataRows);
+        $logger->info('최종 데이터를 저장합니다.');
     }
 
     /**
@@ -149,12 +150,12 @@ class ArchiveService
     }
 
     /**
-     * 두 데이터셋의 비디오 ID 목록이 완전히 동일한지 확인합니다.
-     * 하나라도 다르거나 순서가 맞지 않으면 false를 반환합니다.
+     * 두 데이터셋의 비디오 ID 목록(순서 포함)이 변경되었는지 확인합니다.
+     * 하나라도 다르거나 순서가 달라졌다면 true, 완전히 동일하다면 false를 반환합니다.
      *
-     * @param DataRow[] $newData 새로운 데이터
-     * @param DataRow[] $existingData 기존 데이터
-     * @return bool 비디오 ID 목록이 동일하면 true, 그렇지 않으면 false
+     * @param DataRow[] $newData 새로 수신된 데이터
+     * @param DataRow[] $existingData 기존 저장된 데이터
+     * @return bool 변경되었다면 true, 동일하다면 false
      */
     private function haveVideoIdsChanged(array $newData, array $existingData): bool
     {
