@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace PremiereRelayArchive;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use InvalidArgumentException;
 
 /**
@@ -19,6 +20,12 @@ final class ArchiveDate
     {
         // 시간, 분, 초는 0으로 고정하여 날짜만 비교하도록 보장
         $this->date = $date->setTime(0, 0, 0);
+    }
+
+    private static function getTimeZone(): DateTimeZone
+    {
+        static $timezone = new DateTimeZone('Asia/Seoul');
+        return $timezone;
     }
 
     /**
@@ -39,7 +46,20 @@ final class ArchiveDate
 
     public static function today(): self
     {
-        return new self(new DateTimeImmutable('now', new \DateTimeZone('Asia/Seoul')));
+        try {
+            return new self(new DateTimeImmutable('today', self::getTimeZone()));
+        } catch (\Exception $e) {
+            throw new InvalidArgumentException($e->getMessage());
+        }
+    }
+
+    public static function tomorrow(): self
+    {
+        try {
+            return new self(new DateTimeImmutable('tomorrow', self::getTimeZone()));
+        } catch (\Exception $e) {
+            throw new InvalidArgumentException($e->getMessage());
+        }
     }
 
     public function format(): string
@@ -55,11 +75,6 @@ final class ArchiveDate
     public function getMonth(): string
     {
         return $this->date->format('m');
-    }
-
-    public function getYesterday(): self
-    {
-        return new self($this->date->sub(new \DateInterval('P1D')));
     }
 
     public function __toString(): string

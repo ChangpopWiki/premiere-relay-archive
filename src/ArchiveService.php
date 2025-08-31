@@ -32,7 +32,7 @@ class ArchiveService
      */
     public function updateFromWebhook(array $payload): void
     {
-        $newDataRows = $this->prepareInitialDataRows($payload);
+        $newDataRows = $this->processSheetData($payload);
         $existingDataRows = $this->storage->read();
 
         if ($this->haveVideoIdsChanged($newDataRows, $existingDataRows)) {
@@ -79,7 +79,7 @@ class ArchiveService
      */
     public function backfillByPayload(array $payload): void
     {
-        $dataRows = $this->prepareInitialDataRows($payload);
+        $dataRows = $this->processSheetData($payload);
         $dataRows = $this->updateYoutubeData($dataRows);
         $this->storage->write($dataRows);
     }
@@ -109,21 +109,30 @@ class ArchiveService
     }
 
     /**
-     * 웹훅 페이로드에서 받은 데이터를 처리하여 초기 데이터를 준비합니다.
-     * 이 메서드는 YouTube 정보 병합을 수행하지 않습니다.
+     * 빈 데이터 행을 생성합니다. (time_slot 열만 채워짐)
+     * 주로 초기화 용도로 사용됩니다.
      *
-     * @param array $payload 웹훅 페이로드
-     * @return DataRow[] 처리된 데이터 배열
+     * @return DataRow[] 빈 데이터 행 배열
      */
-    private function prepareInitialDataRows(array $payload): array
+    public static function prepareEmptyDataRows(): array
     {
         $dataRows = [];
-
-        // 23:00부터 23:55까지 5분 단위로 time_slot 열을 채웁니다.
         for ($i = 0; $i < 12; $i++) {
             $time_slot = sprintf("23:%02d", $i * 5);
             $dataRows []= new DataRow(time_slot: $time_slot);
         }
+        return $dataRows;
+    }
+
+    /**
+     * 웹훅 페이로드에서 받은 데이터를 처리합니다. 특히 column_b로부터 비디오 ID를 추출하고 채웁니다.
+     *
+     * @param array $payload 웹훅 페이로드
+     * @return DataRow[] 처리된 데이터 배열
+     */
+    private function processSheetData(array $payload): array
+    {
+        $dataRows = $this->prepareEmptyDataRows();
 
         // 페이로드에서 values 배열을 가져와 각 행의 시트 기반 열 데이터를 채웁니다.
         $payloadValues = $payload['values'] ?? [];

@@ -66,9 +66,9 @@ function handleGetRequest(): void
         $storage = new TsvStorage($date);
         $records = $storage->read();
 
-        if (empty($records)) {
+        if ($storage->isFileExists() == false) {
             sendErrorResponse(MessageKeys::NO_DATA, 404);
-            return;
+            exit;
         }
 
         $recordsAsArray = array_map(fn($row) => $row->toArray(), $records);

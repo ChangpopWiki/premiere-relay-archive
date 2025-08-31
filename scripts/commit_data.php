@@ -7,14 +7,13 @@ use CzProject\GitPhp\Git;
 use CzProject\GitPhp\GitException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-
-$projectRoot = dirname(__DIR__); // 프로젝트 루트 디렉토리의 절대 경로
+use PremiereRelayArchive\Log;
 
 try {
     $git = new Git;
-    $repo = $git->open($projectRoot); // 프로젝트 루트 디렉토리를 Git 저장소로 엽니다.
+    $repo = $git->open(dirname(__DIR__)); // 프로젝트 루트 디렉토리를 Git 저장소로 엽니다.
     $logger = new Logger('commit_data');
-    $logger->pushHandler((new StreamHandler($projectRoot . '/logs/commit_data.log'))->setFormatter(
+    $logger->pushHandler((new StreamHandler(Log::DIR . 'commit_data.log'))->setFormatter(
         new Monolog\Formatter\LineFormatter(
             allowInlineLineBreaks: true,
         )
