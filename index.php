@@ -10,13 +10,15 @@
         .container { max-width: 1200px; margin: 0 auto; }
         .date-picker { text-align: center; margin-bottom: 20px; }
         .loader { text-align: center; font-size: 1.2em; padding: 20px; }
-        .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; white-space: nowrap; }
         th { background-color: #f2f2f2; }
         td a { color: #0645ad; text-decoration: none; }
         td a:hover { text-decoration: underline; }
     </style>
+    <!-- Cloudflare Web Analytics -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0ff6e8c00e3d4514889772cd59e7c2ce"}'></script>
+    <!-- End Cloudflare Web Analytics -->
 </head>
 <body>
     <div class="container">
