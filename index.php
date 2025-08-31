@@ -10,6 +10,7 @@
         .container { max-width: 1200px; margin: 0 auto; }
         .date-picker { text-align: center; margin-bottom: 20px; }
         .loader { text-align: center; font-size: 1.2em; padding: 20px; }
+        .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; white-space: nowrap; }
         th { background-color: #f2f2f2; }
