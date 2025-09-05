@@ -93,6 +93,11 @@ class ArchiveService
      */
     public function isAllRowsPremiered(array $dataRows): bool
     {
+        // 모든 행이 비어있다면 false입니다.
+        if ($this->isAllRowsEmpty($dataRows)) {
+            return false;
+        }
+
         foreach ($dataRows as $row) {
 
             // 비어있는 행은 최초공개 여부를 판단할 수 없습니다.
