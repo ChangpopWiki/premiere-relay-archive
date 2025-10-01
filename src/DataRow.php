@@ -14,6 +14,8 @@ class DataRow
         'column_a',
         'column_b',
         'column_c',
+        'column_d',
+        'column_e',
         'video_id',
         'channel_id',
         'title',
@@ -28,6 +30,8 @@ class DataRow
         public string $column_a = '',
         public string $column_b = '',
         public string $column_c = '',
+        public string $column_d = '',
+        public string $column_e = '',
         public string $video_id = '',
         public string $channel_id = '',
         public string $title = '',
@@ -44,6 +48,8 @@ class DataRow
             $data['column_a'] ?? '',
             $data['column_b'] ?? '',
             $data['column_c'] ?? '',
+            $data['column_d'] ?? '',
+            $data['column_e'] ?? '',
             $data['video_id'] ?? '',
             $data['channel_id'] ?? '',
             $data['title'] ?? '',
@@ -64,6 +70,8 @@ class DataRow
         return empty($this->column_a) &&
                empty($this->column_b) &&
                empty($this->column_c) &&
+               empty($this->column_d) &&
+               empty($this->column_e) &&
                empty($this->video_id);
     }
 
