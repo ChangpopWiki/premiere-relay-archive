@@ -144,11 +144,11 @@ class ArchiveService
         $payloadValues = $payload['values'] ?? [];
         foreach ($payloadValues as $index => $row) {
             if (isset($dataRows[$index])) {
-                $dataRows[$index]->column_a = $row[0] ?? '';
-                $dataRows[$index]->column_b = $row[1] ?? '';
-                $dataRows[$index]->column_c = $row[2] ?? '';
-                $dataRows[$index]->column_d = $row[3] ?? '';
-                $dataRows[$index]->column_e = $row[4] ?? '';
+                $dataRows[$index]->column_a = (string)($row[0] ?? '');
+                $dataRows[$index]->column_b = (string)($row[1] ?? '');
+                $dataRows[$index]->column_c = (string)($row[2] ?? '');
+                $dataRows[$index]->column_d = (string)($row[3] ?? '');
+                $dataRows[$index]->column_e = (string)($row[4] ?? '');
                 $dataRows[$index]->video_id = VideoUtils::extractVideoId($row[1] ?? '');
             }
         }

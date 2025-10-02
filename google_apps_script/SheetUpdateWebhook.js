@@ -19,7 +19,7 @@ function onChange(e) {
   const values = e.source
     .getActiveSheet()
     .getRange(RANGE)
-    .getValues();
+    .getDisplayValues();
 
   // 서버로 전송할 데이터를 구성합니다.
   const payload = JSON.stringify({values: values});
