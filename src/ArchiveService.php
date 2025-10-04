@@ -140,8 +140,10 @@ class ArchiveService
     {
         $dataRows = $this->prepareEmptyDataRows();
 
-        // 페이로드에서 values 배열을 가져와 각 행의 시트 기반 열 데이터를 채웁니다.
+        // 페이로드에서 values와 links 배열을 가져옵니다.
         $payloadValues = $payload['values'] ?? [];
+        $payloadLinks = $payload['links'] ?? [];
+
         foreach ($payloadValues as $index => $row) {
             if (isset($dataRows[$index])) {
                 $dataRows[$index]->column_a = (string)($row[0] ?? '');
@@ -149,7 +151,10 @@ class ArchiveService
                 $dataRows[$index]->column_c = (string)($row[2] ?? '');
                 $dataRows[$index]->column_d = (string)($row[3] ?? '');
                 $dataRows[$index]->column_e = (string)($row[4] ?? '');
-                $dataRows[$index]->video_id = VideoUtils::extractVideoId($row[1] ?? '');
+
+                // 링크가 있으면 링크에서 video_id를 추출하고, 없으면 기존 텍스트에서 추출 (하위 호환성)
+                $sourceForVideoId = $payloadLinks[$index] ?? $row[1] ?? '';
+                $dataRows[$index]->video_id = VideoUtils::extractVideoId($sourceForVideoId);
             }
         }
 

@@ -15,14 +15,24 @@ function onChange(e) {
 
   // 서버 인증에 사용할 비밀 키.
   const secretKey = PropertiesService.getScriptProperties().getProperty('SECRET_KEY');
-  // 지정된 시트와 범위에서 데이터를 가져옵니다.
-  const values = e.source
-    .getActiveSheet()
+  const sheet = e.source.getActiveSheet();
+
+  // 전체 범위의 표시 값을 가져옵니다.
+  const values = sheet
     .getRange(RANGE)
     .getDisplayValues();
 
-  // 서버로 전송할 데이터를 구성합니다.
-  const payload = JSON.stringify({values: values});
+  // B열에서 링크 URL만 추출하여 별도의 배열을 만듭니다.
+  const links = sheet
+    .getRange('B1:B12')
+    .getRichTextValues()
+    .map(row => row[0].getLinkUrl());
+
+  // 서버로 전송할 최종 페이로드를 구성합니다.
+  const payload = JSON.stringify({
+    values: values,
+    links: links
+  });
 
   // 요청 옵션을 설정합니다. (POST, JSON 형식)
   const options = {

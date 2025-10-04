@@ -27,7 +27,7 @@ Google Apps Script 웹훅(Webhook) 요청을 처리하는 백엔드 API.
 * **경로**: `{서버 도메인}/premiere-relay-archive/api.php`
 * **요청 방식 (Webhook)**: `POST`
     * **인증**: HTTP `Authorization` 헤더에 `Bearer {SECRET_KEY}` 토큰을 포함해야 함. 유효하지 않은 키일 경우 `401 Unauthorized` 응답.
-    * **요청 페이로드 (JSON 형식)**: 시트의 A~E 열
+    * **요청 페이로드 (JSON 형식)**: 시트의 A~E 열에 해당하는 `values` 배열과, B열의 하이퍼링크 URL을 담는 `links` 배열을 포함할 수 있다.
     * **응답**: 클라이언트의 `Accept-Language` 헤더에 따라 한국어(`ko`) 또는 영어(`en`)로 성공/오류 메시지를 반환한다.
     * **로깅**: 수신된 페이로드는 `./logs/webhook.log` 파일에 타임스탬프와 함께 기록한다.
 * **요청 방식 (Data Fetch)**: `GET`
@@ -51,7 +51,7 @@ Google Apps Script 웹훅(Webhook) 요청을 처리하는 백엔드 API.
 | `column_c`             | 시트의 C열 값, 영상 시간                | 시트 업데이트 웹훅으로 받은 페이로드       |
 | `column_d`             | 시트의 D열 값, 카운트다운                | 시트 업데이트 웹훅으로 받은 페이로드       |
 | `column_e`             | 시트의 E열 값, 기타 표기사항              | 시트 업데이트 웹훅으로 받은 페이로드       |
-| `video_id`             | 추출된 유튜브 영상 ID                  | `column_b`로부터 추출           |
+| `video_id`             | 추출된 유튜브 영상 ID                  | 페이로드의 `links` 혹은 `column_b`로부터 추출 |
 | `channel_id`           | 영상 업로더 채널 ID                   | `video_id`로 YouTube API 호출 |
 | `title`                | 영상 제목                          | `video_id`로 YouTube API 호출 |
 | `channel_title`        | 영상 업로더 채널 이름                   | `video_id`로 YouTube API 호출 |
@@ -62,7 +62,7 @@ Google Apps Script 웹훅(Webhook) 요청을 처리하는 백엔드 API.
 * **핵심 처리 규칙**:
     1.  **고정 행 생성**: 데이터 유무와 관계없이 `time_slot` 열은 `23:00`부터 `23:55`까지 5분 간격의 12개 행을 항상 유지한다.
     2.  **기본 데이터 저장**: `column_a`, `column_b`, `column_c`는 시트에서 받은 값 그대로 저장한다.
-    3.  **Video ID 추출**: `column_b`의 YouTube 링크에서 `video_id`를 추출하여 저장한다. 유튜브 ID로 분석할 수 없다면 video_id 및 Youtube API를 통해 가져온 열(기존에 있는 경우)을 비운다.
+    3.  **Video ID 추출**: 웹훅 페이로드에 `links` 배열이 포함된 경우, 해당 배열의 URL을 우선적으로 사용하여 `video_id`를 추출한다. `links` 배열이 없거나 URL이 비어있으면, 기존과 같이 `column_b`의 텍스트 값에서 `video_id` 추출을 시도한다. 유튜브 ID로 분석할 수 없다면 `video_id` 및 Youtube API를 통해 가져온 열(기존에 있는 경우)을 비운다.
     5.  **빈 파일 생성 방지**: 모든 행이 전일 데이터와 중복되어 비워질 경우, 당일의 TSV 파일을 생성하지 않는다.
     6.  **업데이트 트리거**: 기존에 저장된 데이터의 `video_id` 목록과 새로 처리된 데이터의 `video_id` 목록을 비교하여, 순서나 내용에 변경점이 있을 경우에만 YouTube 정보 업데이트를 즉시 실행한 후 최종 저장한다.
 
