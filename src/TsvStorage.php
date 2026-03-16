@@ -72,7 +72,41 @@ class TsvStorage
         $filePath = $this->getTsvFilePath();
         return file_exists($filePath) && filesize($filePath) > 0;
     }
-    
+
+    /**
+     * 지정된 월의 모든 TSV 파일 목록을 스캔합니다.
+     *
+     * @param int $year 연도
+     * @param int $month 월 (1-12)
+     * @return string[] 존재하는 파일의 날짜 목록 (YYYY-MM-DD 형식, 정렬됨)
+     */
+    public static function scanMonthFiles(int $year, int $month): array
+    {
+        $dirPath = dirname(__DIR__) . '/data' . '/' . sprintf('%04d', $year) . '/' . sprintf('%02d', $month);
+
+        if (!is_dir($dirPath)) {
+            return [];
+        }
+
+        $files = glob($dirPath . '/*.tsv');
+        if ($files === false) {
+            return [];
+        }
+
+        $dates = [];
+        foreach ($files as $file) {
+            if (filesize($file) > 0) {
+                $basename = basename($file, '.tsv');
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $basename)) {
+                    $dates[] = $basename;
+                }
+            }
+        }
+
+        sort($dates);
+        return $dates;
+    }
+
     /**
      * 파일 경로를 생성합니다.
      *

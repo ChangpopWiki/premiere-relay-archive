@@ -55,6 +55,13 @@ function loadEnvironmentConfig(): Environment
  */
 function handleGetRequest(): void
 {
+    // 월 단위 요청 처리
+    if (isset($_GET['month'])) {
+        handleMonthRequest($_GET['month']);
+        return;
+    }
+
+    // 일 단위 요청 처리
     try {
         $date = ArchiveDate::fromString($_GET['date']);
     } catch (InvalidArgumentException $e) {
@@ -73,6 +80,62 @@ function handleGetRequest(): void
 
         $recordsAsArray = array_map(fn($row) => $row->toArray(), $records);
         sendJsonResponse($recordsAsArray);
+    } catch (Exception $e) {
+        sendErrorResponse(MessageKeys::FILE_READ_ERROR, 500);
+    }
+}
+
+/**
+ * 월 단위 요청을 처리합니다.
+ *
+ * @param string $monthString YYYY-MM 형식의 월 문자열
+ */
+function handleMonthRequest(string $monthString): void
+{
+    // YYYY-MM 형식 검증
+    if (!preg_match('/^\d{4}-\d{2}$/', $monthString)) {
+        sendErrorResponse(MessageKeys::INVALID_DATE, 400, 'YYYY-MM 형식이 필요합니다.');
+        return;
+    }
+
+    try {
+        [$year, $month] = explode('-', $monthString);
+        $year = (int)$year;
+        $month = (int)$month;
+
+        // 월 범위 검증
+        if ($month < 1 || $month > 12) {
+            sendErrorResponse(MessageKeys::INVALID_DATE, 400, '월은 1-12 사이여야 합니다.');
+            return;
+        }
+
+        // 해당 월의 모든 TSV 파일 스캔
+        $dates = TsvStorage::scanMonthFiles($year, $month);
+
+        // 각 날짜별 데이터 읽기
+        $days = [];
+        foreach ($dates as $dateString) {
+            try {
+                $date = ArchiveDate::fromString($dateString);
+                $storage = new TsvStorage($date);
+                $records = $storage->read();
+
+                if ($storage->isFileExists()) {
+                    $days[] = [
+                        'date' => $dateString,
+                        'records' => array_map(fn($row) => $row->toArray(), $records)
+                    ];
+                }
+            } catch (Exception $e) {
+                // 개별 파일 읽기 오류는 무시하고 계속 진행
+                continue;
+            }
+        }
+
+        sendJsonResponse([
+            'month' => $monthString,
+            'days' => $days
+        ]);
     } catch (Exception $e) {
         sendErrorResponse(MessageKeys::FILE_READ_ERROR, 500);
     }
