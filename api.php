@@ -55,6 +55,12 @@ function loadEnvironmentConfig(): Environment
  */
 function handleGetRequest(): void
 {
+    // 데이터 파일들의 마지막 수정 시간을 노출하는 내부용 비공개 엔드포인트
+    if (isset($_GET['files_last_modified'])) {
+        handleFilesLastModifiedRequest();
+        return;
+    }
+
     // 월 단위 요청 처리
     if (isset($_GET['month'])) {
         handleMonthRequest($_GET['month']);
@@ -83,6 +89,36 @@ function handleGetRequest(): void
     } catch (Exception $e) {
         sendErrorResponse(MessageKeys::FILE_READ_ERROR, 500);
     }
+}
+
+
+function handleFilesLastModifiedRequest(): void
+{
+    $env = loadEnvironmentConfig();
+    $headers = getallheaders();
+    $token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
+    if ($token !== $env->secretKey) {
+        sendErrorResponse(MessageKeys::UNAUTHORIZED, 401);
+        return;
+    }
+
+    $dataDir = __DIR__ . '/data';
+    $result = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dataDir, FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+        if ($file->getExtension() !== 'tsv') {
+            continue;
+        }
+        $relativePath = ltrim(str_replace($dataDir, '', $file->getPathname()), '/');
+        $result[$relativePath] = date('Y-m-d\TH:i:s\Z', $file->getMTime());
+    }
+
+    ksort($result);
+    sendJsonResponse($result);
 }
 
 /**
