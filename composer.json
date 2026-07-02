@@ -6,7 +6,6 @@
     },
     "require": {
         "league/csv": "^9.24",
-        "czproject/git-php": "^4.5",
         "guzzlehttp/guzzle": "^7.9",
         "monolog/monolog": "^3.9"
     },
