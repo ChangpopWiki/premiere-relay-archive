@@ -1,6 +1,7 @@
 /vendor/
 /config.php
 /logs/
+/data/
 /.idea/
 
 # Created by https://www.toptal.com/developers/gitignore/api/phpunit
