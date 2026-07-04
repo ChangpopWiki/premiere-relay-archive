@@ -1,0 +1,10 @@
+:80 {
+    handle /premiere-relay-archive/data/* {
+        root * /app
+        file_server browse
+    }
+
+    handle /premiere-relay-archive/* {
+        reverse_proxy web:8080
+    }
+}
