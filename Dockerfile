@@ -1,4 +1,6 @@
-FROM php:8.3-cli AS base
+FROM php:8.3-fpm AS base
+
+ENV TZ=Asia/Seoul
 
 RUN apt-get update && apt-get install -y \
         libcurl4-openssl-dev \
@@ -15,8 +17,12 @@ RUN composer install --no-dev --optimize-autoloader
 
 COPY app/ .
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
 FROM base AS web
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "/app"]
+CMD ["php-fpm"]
 
 FROM base AS scheduler
 ARG TARGETARCH

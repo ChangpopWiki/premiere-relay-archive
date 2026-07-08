@@ -5,12 +5,13 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use PremiereRelayArchive\ArchiveDate;
 use PremiereRelayArchive\Environment;
+use PremiereRelayArchive\Log;
 use PremiereRelayArchive\MessageKeys;
 use PremiereRelayArchive\ArchiveService;
 use PremiereRelayArchive\TsvStorage;
 use PremiereRelayArchive\Translator;
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // CORS 헤더 설정
 header('Access-Control-Allow-Origin: *');
@@ -183,7 +184,7 @@ function handleMonthRequest(string $monthString): void
 function handlePostRequest(): void
 {
     $logger = new Logger('webhook');
-    $logger->pushHandler((new StreamHandler('./logs/webhook.log'))->setFormatter(
+    $logger->pushHandler((new StreamHandler(Log::DIR . 'webhook.log'))->setFormatter(
         new Monolog\Formatter\LineFormatter(
             allowInlineLineBreaks: true,
         )
