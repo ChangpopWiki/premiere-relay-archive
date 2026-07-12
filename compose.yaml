@@ -11,6 +11,8 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+    networks:
+      - chp_proxy
 
   scheduler:
     build:
@@ -22,11 +24,17 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+    networks:
+      - chp_proxy
 
   caddy:
     image: caddy:latest
-    ports:
-      - "${CADDY_PORT:-8081}:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./data:/app/data
+    networks:
+      - chp_proxy
+
+networks:
+  chp_proxy:
+    external: true

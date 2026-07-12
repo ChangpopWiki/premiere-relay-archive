@@ -1,9 +1,8 @@
 :80 {
-    redir /premiere-relay-archive /premiere-relay-archive/ 301
-    redir /premiere-relay-archive/data /premiere-relay-archive/data/ 301
+    redir /data /data/ 301
 
-    handle /premiere-relay-archive/data/* {
-        uri strip_prefix /premiere-relay-archive/data
+    handle /data/* {
+        uri strip_prefix /data
         root * /app/data
         file_server {
             browse
@@ -11,7 +10,7 @@
         }
     }
 
-    handle_path /premiere-relay-archive/* {
+    handle {
         root * /app/public
         route {
             @phpFile path *.php
