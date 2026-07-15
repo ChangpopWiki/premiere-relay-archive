@@ -3,4 +3,4 @@
 /.idea/
 .env
 
-compose.override.yml
+compose.override.yaml
