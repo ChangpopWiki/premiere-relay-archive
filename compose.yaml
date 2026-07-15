@@ -11,8 +11,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-    networks:
-      - chp_proxy
 
   scheduler:
     build:
@@ -24,8 +22,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-    networks:
-      - chp_proxy
 
   caddy:
     image: caddy:latest
@@ -33,7 +29,10 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./data:/app/data
     networks:
-      - chp_proxy
+      chp_proxy:
+        aliases:
+          - premiere-relay-archive
+      default:
 
 networks:
   chp_proxy:
