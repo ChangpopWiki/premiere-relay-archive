@@ -1,0 +1,27 @@
+:80 {
+    redir /data /data/ 301
+
+    handle /data/* {
+        uri strip_prefix /data
+        root * /app/data
+        file_server {
+            browse
+            hide .git .github
+        }
+    }
+
+    handle {
+        root * /app/public
+        route {
+            @phpFile path *.php
+            rewrite @phpFile {path}
+            rewrite * /index.php
+            reverse_proxy web:9000 {
+                transport fastcgi {
+                    root /app/public
+                    split .php
+                }
+            }
+        }
+    }
+}

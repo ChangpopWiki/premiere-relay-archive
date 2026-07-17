@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+      target: web
+  scheduler:
+    build:
+      context: .
+      target: scheduler
+  caddy:
+    ports:
+      # 기본 포트: 10598, .env 파일에서 DEV_SERVICE_PORT을 설정하여 변경 가능
+      - "${DEV_SERVICE_PORT:-10598}:80"

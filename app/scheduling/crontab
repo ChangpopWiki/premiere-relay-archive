@@ -1,0 +1,3 @@
+57 23 * * *  php /app/scripts/prepare_daily_file.php
+0 0-22 * * * php /app/scripts/update_youtube_data.php
+*/5 23 * * * php /app/scripts/update_youtube_data.php
