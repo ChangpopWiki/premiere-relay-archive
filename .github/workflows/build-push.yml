@@ -1,6 +1,7 @@
 name: 빌드 및 GHCR로 푸시
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
     paths:
