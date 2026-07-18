@@ -1,15 +1,12 @@
 ARG TARGETARCH
 ARG SUPERCRONIC_VERSION=v0.2.29
 
-FROM php:8.3-fpm AS base
+FROM php:8.3-fpm-alpine AS base
 
 ENV TZ=Asia/Seoul
 
-RUN apt-get update && apt-get install -y \
-        libcurl4-openssl-dev \
-        unzip \
-    && docker-php-ext-install curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl-dev unzip \
+    && docker-php-ext-install curl
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
