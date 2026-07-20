@@ -49,8 +49,8 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/premiere-relay-archive/${{ matrix.target }}
-          labels: |
           # 참고: 여기에 명시되지 않았어도 metadata-action이 기본적으로 주요 레이블을 채웁니다.
+          labels: |
             org.opencontainers.image.title=premiere-relay-archive/${{ matrix.target }}
             org.opencontainers.image.version=${{ steps.version.outputs.value }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
