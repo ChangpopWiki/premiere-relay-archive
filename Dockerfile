@@ -1,7 +1,7 @@
 ARG TARGETARCH
 ARG SUPERCRONIC_VERSION=v0.2.29
 
-FROM php:8.3-fpm-alpine AS base
+FROM php:8.5-fpm-alpine AS base
 
 ENV TZ=Asia/Seoul
 

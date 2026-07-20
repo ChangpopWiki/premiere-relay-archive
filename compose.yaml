@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/changpopwiki/premiere-relay-archive-web:latest
+    image: ghcr.io/changpopwiki/premiere-relay-archive/web:latest
     expose:
       - "9000"
     environment:
@@ -11,7 +11,7 @@ services:
       - ./logs:/app/logs
 
   scheduler:
-    image: ghcr.io/changpopwiki/premiere-relay-archive-scheduler:latest
+    image: ghcr.io/changpopwiki/premiere-relay-archive/scheduler:latest
     environment:
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - SECRET_KEY=${SECRET_KEY}

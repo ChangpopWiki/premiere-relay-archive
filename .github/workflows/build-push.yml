@@ -2,12 +2,20 @@ name: 빌드 및 GHCR로 푸시
 
 on:
   workflow_dispatch:
+    inputs:
+      push_to_registry:
+        description: 'GHCR에 푸시하기'
+        type: boolean
+        default: false
   push:
     branches: [ "main" ]
     paths:
       - 'app/**'
       - 'Dockerfile'
       - 'entrypoint.sh'
+
+env:
+  PUSH_TO_REGISTRY: ${{ github.event_name == 'push' || inputs.push_to_registry }}
 
 permissions:
   contents: read
@@ -21,35 +29,44 @@ jobs:
         # 빌드할 타겟 목록
         target: [web, scheduler]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
 
-      - name: Set repository owner to lowercase
-        run: |
-          echo "REPO_OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Set up QEMU (멀티 아키텍처 빌드용)
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
+      - if: env.PUSH_TO_REGISTRY == 'true'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine version
+        id: version
+        run: echo "value=$(date --utc '+%y.%-m.%-d').${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/premiere-relay-archive/${{ matrix.target }}
+          labels: |
+          # 참고: 여기에 명시되지 않았어도 metadata-action이 기본적으로 주요 레이블을 채웁니다.
+            org.opencontainers.image.title=premiere-relay-archive/${{ matrix.target }}
+            org.opencontainers.image.version=${{ steps.version.outputs.value }}
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+            type=raw,value=${{ steps.version.outputs.value }}
+
       - name: Build and push ${{ matrix.target }}
         uses: docker/build-push-action@v7
         with:
           context: .
-          target: ${{ matrix.target }}  # web 또는 scheduler
+          target: ${{ matrix.target }}
           platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_OWNER_LOWER }}/premiere-relay-archive-${{ matrix.target }}:latest
-            ghcr.io/${{ env.REPO_OWNER_LOWER }}/premiere-relay-archive-${{ matrix.target }}:${{ github.sha }}
+          push: ${{ env.PUSH_TO_REGISTRY == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
