@@ -54,10 +54,11 @@ jobs:
             org.opencontainers.image.title=premiere-relay-archive/${{ matrix.target }}
             org.opencontainers.image.version=${{ steps.version.outputs.value }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           tags: |
             type=raw,value=latest
-            type=sha
             type=raw,value=${{ steps.version.outputs.value }}
+            type=sha
 
       - name: Build and push ${{ matrix.target }}
         uses: docker/build-push-action@v7
