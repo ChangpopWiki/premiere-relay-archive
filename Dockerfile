@@ -5,15 +5,19 @@ FROM php:8.5-fpm-alpine AS base
 
 ENV TZ=Asia/Seoul
 
-RUN apk add --no-cache curl-dev unzip \
-    && docker-php-ext-install curl
+RUN apk add --no-cache tzdata libcurl \
+    && cp /usr/share/zoneinfo/${TZ} /etc/localtime \
+    && echo "${TZ}" > /etc/timezone \
+    && apk add --no-cache --virtual .build-deps curl-dev unzip \
+    && docker-php-ext-install curl \
+    && apk del .build-deps
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
 COPY app/composer.json app/composer.lock ./
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 COPY app/ .
 
