@@ -42,7 +42,7 @@ jobs:
 
       - name: Determine version
         id: version
-        run: echo "value=$(date --utc '+%y.%-m.%-d').${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+        run: echo "value=$(date --utc '+%y.%-m')-r${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
@@ -57,7 +57,7 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           tags: |
             type=raw,value=latest
-            type=raw,value=${{ steps.version.outputs.value }}
+            type=raw,value=${{ steps.version.outputs.value }},priority=10
             type=sha
 
       - name: Build and push ${{ matrix.target }}
