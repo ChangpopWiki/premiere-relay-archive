@@ -18,7 +18,7 @@ class YoutubeApiClient
     private Client $client;
     private Logger $logger;
 
-    public function __construct(string $apiKey, Client $client = null, Logger $logger = null)
+    public function __construct(string $apiKey, ?Client $client = null, ?Logger $logger = null)
     {
         $this->apiKey = $apiKey;
         $this->client = $client ?? new Client();

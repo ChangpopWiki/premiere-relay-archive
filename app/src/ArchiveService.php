@@ -16,8 +16,8 @@ class ArchiveService
 
     public function __construct(
         ArchiveDate $date,
-        TsvStorage $storage = null,
-        YoutubeApiClient $youtubeApiClient = null)
+        ?TsvStorage $storage = null,
+        ?YoutubeApiClient $youtubeApiClient = null)
     {
         $this->date = $date;
         $this->storage = $storage ?? new TsvStorage($date);
