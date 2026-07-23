@@ -7,8 +7,8 @@ services:
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - ./var/data:/app/data
+      - ./var/logs:/app/logs
 
   scheduler:
     image: ghcr.io/changpopwiki/premiere-relay-archive/scheduler:latest
@@ -16,14 +16,14 @@ services:
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - ./var/data:/app/data
+      - ./var/logs:/app/logs
 
   caddy:
     image: caddy:2-alpine
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./data:/app/data
+      - ./var/data:/app/data
     networks:
       chp_proxy:
         aliases:
