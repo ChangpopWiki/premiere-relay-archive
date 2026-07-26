@@ -1,6 +1,7 @@
 services:
   web:
     image: ghcr.io/changpopwiki/premiere-relay-archive/web:latest
+    restart: unless-stopped
     expose:
       - "9000"
     environment:
@@ -12,6 +13,7 @@ services:
 
   scheduler:
     image: ghcr.io/changpopwiki/premiere-relay-archive/scheduler:latest
+    restart: unless-stopped
     environment:
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
@@ -21,6 +23,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    restart: unless-stopped
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./var/data:/app/data
