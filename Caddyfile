@@ -1,5 +1,5 @@
 :80 {
-    redir /data /data/ 301
+    redir /data data/ 301
 
     handle /data/* {
         uri strip_prefix /data
