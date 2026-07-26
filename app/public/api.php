@@ -103,7 +103,7 @@ function handleFilesLastModifiedRequest(): void
         return;
     }
 
-    $dataDir = __DIR__ . '/data';
+    $dataDir = dirname(__DIR__) . '/data';
     $result = [];
 
     $iterator = new RecursiveIteratorIterator(
