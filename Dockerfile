@@ -49,4 +49,9 @@ FROM base AS scheduler
 # Supercronic 바이너리 복사
 COPY --chmod=+x --from=supercronic /supercronic /usr/local/bin/supercronic
 
+# www-data로 실행하여 생성 파일 소유권을 웹 컨테이너와 통일
+# 볼륨 chown은 웹 컨테이너 entrypoint에서 보장
+USER www-data
+ENTRYPOINT []
+
 CMD ["supercronic", "/app/scheduling/crontab"]
