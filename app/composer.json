@@ -6,7 +6,7 @@
     },
     "require": {
         "league/csv": "^9.24",
-        "guzzlehttp/guzzle": "^7.9",
+        "guzzlehttp/guzzle": "^7.10",
         "monolog/monolog": "^3.9"
     },
     "require-dev": {
