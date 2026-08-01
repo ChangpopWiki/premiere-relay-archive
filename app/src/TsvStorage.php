@@ -31,7 +31,7 @@ class TsvStorage
             return [];
         }
 
-        $reader = Csv\Reader::createFromPath($filePath);
+        $reader = Csv\Reader::from($filePath);
         $reader->setDelimiter("\t");
         $reader->setHeaderOffset(0);
 
@@ -58,7 +58,7 @@ class TsvStorage
             mkdir($dir, 0755, true);
         }
 
-        $writer = Csv\Writer::createFromPath($filePath, 'w+');
+        $writer = Csv\Writer::from($filePath, 'w+');
         $writer->setDelimiter("\t");
 
         $writer->insertOne(DataRow::HEADER);
